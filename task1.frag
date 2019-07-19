@@ -9,8 +9,8 @@
 // STUDENT NAME: 
 // NUS User ID.: 
 //
-// STUDENT NAME: 
-// NUS User ID.: 
+// STUDENT NAME: Kuang Zhiyi
+// NUS User ID.: t0918062
 //
 // COMMENTS TO GRADER: 
 //
@@ -226,6 +226,26 @@ bool IntersectSphere( in Sphere_t sph, in Ray_t ray, in float tmin, in float tma
     /////////////////////////////////
     // TASK: WRITE YOUR CODE HERE. //
     /////////////////////////////////
+    float a = 1.0;
+    float b = 2.0 * dot(ray.o, ray.d) + 2.0 * dot(ray.d, sph.center);
+    float c = dot(ray.o, ray.o) + dot(sph.center, sph.center) - 2.0 * dot(ray.o, sph.center) - sph.radius * sph.radius;
+    float d = b * b - 4.0 * a * c;
+    float t_minus = ( -b - sqrt(d) ) / (2.0 * a);
+    float t_plus =  ( -b + sqrt(d) ) / (2.0 * a);
+    float t_positive = 0.0;
+    
+    if ( t_minus > 0 )
+        t_positive = t_minus;
+    else if ( t_plus > 0 )
+        t_positive = t_plus;
+    else
+        return false;
+    
+    if ( t_positive < tmin || t_positive > tmax ) return false;
+
+    t = t_positive;
+    hitPos = ray.o + t_positive * ray.d;
+    hitNormal = normalize(hitPos - sph.center);
     return false;  // Replace this with your code.
 
 }
@@ -242,7 +262,26 @@ bool IntersectSphere( in Sphere_t sph, in Ray_t ray, in float tmin, in float tma
     /////////////////////////////////
     // TASK: WRITE YOUR CODE HERE. //
     /////////////////////////////////
-    return false;  // Replace this with your code.
+    float a = 1.0;
+    float b = 2.0 * dot(ray.o, ray.d) + 2.0 * dot(ray.d, sph.center);
+    float c = dot(ray.o, ray.o) + dot(sph.center, sph.center) - 2.0 * dot(ray.o, sph.center) - sph.radius * sph.radius;
+    float d = b * b - 4.0 * a * c;
+    
+    float t_minus = ( -b - sqrt(d) ) / (2.0 * a);
+    float t_plus =  ( -b + sqrt(d) ) / (2.0 * a);
+
+    float t_positive = 0.0;
+
+    if ( t_minus > 0 )
+        t_positive = t_minus;
+    else if ( t_plus > 0 )
+        t_positive = t_plus;
+    else
+        return false;
+    
+    if ( t_positive < tmin || t_positive > tmax ) return false;
+
+    return true;  // Replace this with your code.
 
 }
 
