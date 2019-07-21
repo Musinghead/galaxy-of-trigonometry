@@ -226,10 +226,14 @@ bool IntersectSphere( in Sphere_t sph, in Ray_t ray, in float tmin, in float tma
     /////////////////////////////////
     // TASK: WRITE YOUR CODE HERE. //
     /////////////////////////////////
+    Ray_t local_ray = Ray_t(ray.o - sph.center, ray.d);
     float a = 1.0;
-    float b = 2.0 * dot(ray.o, ray.d) + 2.0 * dot(ray.d, sph.center);
-    float c = dot(ray.o, ray.o) + dot(sph.center, sph.center) - 2.0 * dot(ray.o, sph.center) - sph.radius * sph.radius;
+    float b = 2.0 * dot(local_ray.d, local_ray.o);
+    float c = dot(local_ray.o, local_ray.o) - sph.radius * sph.radius;
     float d = b * b - 4.0 * a * c;
+    if ( d <= 0.0 )
+        return false;
+    
     float t_minus = ( -b - sqrt(d) ) / (2.0 * a);
     float t_plus =  ( -b + sqrt(d) ) / (2.0 * a);
     float t_positive = 0.0;
@@ -246,7 +250,7 @@ bool IntersectSphere( in Sphere_t sph, in Ray_t ray, in float tmin, in float tma
     t = t_positive;
     hitPos = ray.o + t_positive * ray.d;
     hitNormal = normalize(hitPos - sph.center);
-    return false;  // Replace this with your code.
+    return true;  // Replace this with your code.
 
 }
 
@@ -262,11 +266,15 @@ bool IntersectSphere( in Sphere_t sph, in Ray_t ray, in float tmin, in float tma
     /////////////////////////////////
     // TASK: WRITE YOUR CODE HERE. //
     /////////////////////////////////
+    Ray_t local_ray = Ray_t(ray.o - sph.center, ray.d);
     float a = 1.0;
-    float b = 2.0 * dot(ray.o, ray.d) + 2.0 * dot(ray.d, sph.center);
-    float c = dot(ray.o, ray.o) + dot(sph.center, sph.center) - 2.0 * dot(ray.o, sph.center) - sph.radius * sph.radius;
+    float b = 2.0 * dot(local_ray.d, local_ray.o);
+    float c = dot(local_ray.o, local_ray.o) - sph.radius * sph.radius;
     float d = b * b - 4.0 * a * c;
     
+    if ( d <= 0.0 )
+        return false;
+        
     float t_minus = ( -b - sqrt(d) ) / (2.0 * a);
     float t_plus =  ( -b + sqrt(d) ) / (2.0 * a);
 
@@ -346,27 +354,27 @@ vec3 CastRay( in Ray_t ray,
     //   nearest_t, nearest_hitPos, nearest_hitNormal, nearest_hitMatID.
     /////////////////////////////////////////////////////////////////////////////
 
-    for (int i = 0 ; i < NUM_PLANES ; i++) {
-        temp_hasHit = IntersectPlane(Plane[i], ray, DEFAULT_TMIN, DEFAULT_TMAX, 
+    for (int i0 = 0 ; i0 < NUM_PLANES ; i0++) {
+        temp_hasHit = IntersectPlane(Plane[i0], ray, DEFAULT_TMIN, DEFAULT_TMAX, 
                                      temp_t, temp_hitPos, temp_hitNormal);
         if (temp_hasHit && temp_t < nearest_t) {
             hasHitSomething = true;
             nearest_t = temp_t;
             nearest_hitPos = temp_hitPos;
             nearest_hitNormal = temp_hitNormal;
-            nearest_hitMatID = Plane[i].materialID;
+            nearest_hitMatID = Plane[i0].materialID;
         }
     }
 
-    for (int i = 0 ; i < NUM_SPHERES ; i++) {
-        temp_hasHit = IntersectSphere(Sphere[i], ray, DEFAULT_TMIN, DEFAULT_TMAX, 
+    for (int i1 = 0 ; i1 < NUM_SPHERES ; i1++) {
+        temp_hasHit = IntersectSphere(Sphere[i1], ray, DEFAULT_TMIN, DEFAULT_TMAX, 
                              temp_t, temp_hitPos, temp_hitNormal);
         if (temp_hasHit && temp_t < nearest_t) {
             hasHitSomething = true;
             nearest_t = temp_t;
             nearest_hitPos = temp_hitPos;
             nearest_hitNormal = temp_hitNormal;
-            nearest_hitMatID = Sphere[i].materialID;
+            nearest_hitMatID = Sphere[i1].materialID;
         }
     }
 
@@ -395,12 +403,12 @@ vec3 CastRay( in Ray_t ray,
     Ray_t shadow_ray;
     bool inShadow = false;
     bool temp_inShadow;
-    for (int i = 0 ; i < NUM_LIGHTS ; i++) {
-        shadow_ray = Ray_t(nearest_hitPos, normalize( Light[i].position - nearest_hitPos ));
+    for (int i2 = 0 ; i2 < NUM_LIGHTS ; i2++) {
+        shadow_ray = Ray_t(nearest_hitPos, normalize( Light[i2].position - nearest_hitPos ));
         inShadow = false;
 
         for (int j = 0 ; j < NUM_PLANES ; j++) {
-            temp_inShadow = IntersectPlane(Plane[i], shadow_ray, DEFAULT_TMIN, DEFAULT_TMAX);
+            temp_inShadow = IntersectPlane(Plane[j], shadow_ray, DEFAULT_TMIN, DEFAULT_TMAX);
             if (temp_inShadow) {
                 inShadow = temp_inShadow;
                 break;
@@ -408,17 +416,17 @@ vec3 CastRay( in Ray_t ray,
         }
 
         if (!inShadow) {
-            for (int k = 0 ; k < NUM_SPHERES ; k++) {
-                temp_inShadow = IntersectSphere(Sphere[i], shadow_ray, DEFAULT_TMIN, DEFAULT_TMAX);
-                if (temp_inShadow) {
-                    inShadow = temp_inShadow;
-                    break;
-                }
-            }
-        }
-
-        I_local += PhongLighting(shadow_ray, nearest_hitNormal, -ray.d, inShadow, 
-                                 Material[nearest_hitMatID], Light[i]);
+             for (int k = 0 ; k < NUM_SPHERES ; k++) {
+                 temp_inShadow = IntersectSphere(Sphere[k], shadow_ray, DEFAULT_TMIN, DEFAULT_TMAX);
+                 if (temp_inShadow) {
+                     inShadow = temp_inShadow;
+                     break;
+                 }
+             }
+         }
+        // debug with default no shadow
+        I_local += PhongLighting(shadow_ray.d, nearest_hitNormal, -ray.d, inShadow, 
+                                 Material[nearest_hitMatID], Light[i2]);
             
     }
     /////////////////////////////////
