@@ -394,6 +394,35 @@ vec3 CastRay( in Ray_t ray,
     // * Then, call PhongLighting() to compute lighting for this light source.
     /////////////////////////////////////////////////////////////////////////////
 
+    Ray_t shadow_ray;
+    bool inShadow = false;
+    bool temp_inShadow;
+    for (int i = 0 ; i < NUM_LIGHTS ; i++) {
+        shadow_ray = Ray_t(nearest_hitPos, normalize( Light[i].position - nearest_hitPos ));
+        inShadow = false;
+
+        for (int j = 0 ; j < NUM_PLANES ; j++) {
+            temp_inShadow = IntersectPlane(Plane[i], shadow_ray, DEFAULT_TMIN, DEFAULT_TMAX);
+            if (temp_inShadow) {
+                inShadow = temp_inShadow;
+                break;
+            }
+        }
+
+        if (!inShadow) {
+            for (int k = 0 ; k < NUM_SPHERES ; k++) {
+                temp_inShadow = IntersectSphere(Sphere[i], shadow_ray, DEFAULT_TMIN, DEFAULT_TMAX);
+                if (temp_inShadow) {
+                    inShadow = temp_inShadow;
+                    break;
+                }
+            }
+        }
+
+        I_local += PhongLighting(shadow_ray, nearest_hitNormal, -ray, inShadow, 
+                                 Material[nearest_hitMatID], Light[i]);
+            
+    }
     /////////////////////////////////
     // TASK: WRITE YOUR CODE HERE. //
     /////////////////////////////////
