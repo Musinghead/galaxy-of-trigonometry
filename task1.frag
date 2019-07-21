@@ -346,6 +346,32 @@ vec3 CastRay( in Ray_t ray,
     //   nearest_t, nearest_hitPos, nearest_hitNormal, nearest_hitMatID.
     /////////////////////////////////////////////////////////////////////////////
 
+    for (int i = 0 ; i < NUM_PLANES ; i++) {
+        temp_hasHit = IntersectPlane(Plane[i], ray, DEFAULT_TMIN, DEFAULT_TMAX, 
+                                     temp_t, temp_hitPos, temp_hitNormal);
+        if (temp_hasHit && temp_t < nearest_t) {
+            hasHitSomething = true;
+            nearest_t = temp_t;
+            nearest_hitPos = temp_hitPos;
+            nearest_hitNormal = temp_hitNormal;
+            nearest_hasHit = temp_hasHit;
+            nearest_hitMatID = Plane[i].materialID;
+        }
+    }
+
+    for (int i = 0 ; i < NUM_SPHERES ; i++) {
+        temp_hasHit = IntersectSphere(Sphere[i], ray, DEFAULT_TMIN, DEFAULT_TMAX, 
+                             temp_t, temp_hitPos, temp_hitNormal);
+        if (temp_hasHit && temp_t < nearest_t) {
+            hasHitSomething = true;
+            nearest_t = temp_t;
+            nearest_hitPos = temp_hitPos;
+            nearest_hitNormal = temp_hitNormal;
+            nearest_hasHit = temp_hasHit;
+            nearest_hitMatID = Sphere[i].materialID;
+        }
+    }
+
     /////////////////////////////////
     // TASK: WRITE YOUR CODE HERE. //
     /////////////////////////////////
