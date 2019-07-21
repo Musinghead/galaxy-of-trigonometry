@@ -234,9 +234,9 @@ bool IntersectSphere( in Sphere_t sph, in Ray_t ray, in float tmin, in float tma
     float t_plus =  ( -b + sqrt(d) ) / (2.0 * a);
     float t_positive = 0.0;
     
-    if ( t_minus > 0 )
+    if ( t_minus > 0.0 )
         t_positive = t_minus;
-    else if ( t_plus > 0 )
+    else if ( t_plus > 0.0 )
         t_positive = t_plus;
     else
         return false;
@@ -272,9 +272,9 @@ bool IntersectSphere( in Sphere_t sph, in Ray_t ray, in float tmin, in float tma
 
     float t_positive = 0.0;
 
-    if ( t_minus > 0 )
+    if ( t_minus > 0.0 )
         t_positive = t_minus;
-    else if ( t_plus > 0 )
+    else if ( t_plus > 0.0 )
         t_positive = t_plus;
     else
         return false;
@@ -354,7 +354,6 @@ vec3 CastRay( in Ray_t ray,
             nearest_t = temp_t;
             nearest_hitPos = temp_hitPos;
             nearest_hitNormal = temp_hitNormal;
-            nearest_hasHit = temp_hasHit;
             nearest_hitMatID = Plane[i].materialID;
         }
     }
@@ -367,7 +366,6 @@ vec3 CastRay( in Ray_t ray,
             nearest_t = temp_t;
             nearest_hitPos = temp_hitPos;
             nearest_hitNormal = temp_hitNormal;
-            nearest_hasHit = temp_hasHit;
             nearest_hitMatID = Sphere[i].materialID;
         }
     }
@@ -419,7 +417,7 @@ vec3 CastRay( in Ray_t ray,
             }
         }
 
-        I_local += PhongLighting(shadow_ray, nearest_hitNormal, -ray, inShadow, 
+        I_local += PhongLighting(shadow_ray, nearest_hitNormal, Ray_t(nearest_hitPos, -ray.d), inShadow, 
                                  Material[nearest_hitMatID], Light[i]);
             
     }
