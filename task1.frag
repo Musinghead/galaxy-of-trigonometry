@@ -406,8 +406,10 @@ vec3 CastRay( in Ray_t ray,
         bool inShadow = false;
         bool temp_inShadow = false;
 
+        float tmax_to_light = dot(shadow_ray_d, (Light[i2].position - nearest_hitPos));
+
         for (int j = 0 ; j < NUM_PLANES ; j++) {
-            temp_inShadow = IntersectPlane(Plane[j], shadow_ray, DEFAULT_TMIN, DEFAULT_TMAX);
+            temp_inShadow = IntersectPlane(Plane[j], shadow_ray, DEFAULT_TMIN, tmax_to_light);
             if (temp_inShadow) {
                 inShadow = temp_inShadow;
                 break;
@@ -416,7 +418,7 @@ vec3 CastRay( in Ray_t ray,
 
         if (!inShadow) {
              for (int k = 0 ; k < NUM_SPHERES ; k++) {
-                 temp_inShadow = IntersectSphere(Sphere[k], shadow_ray, DEFAULT_TMIN, DEFAULT_TMAX);
+                 temp_inShadow = IntersectSphere(Sphere[k], shadow_ray, DEFAULT_TMIN, tmax_to_light);
                  if (temp_inShadow) {
                      inShadow = temp_inShadow;
                      break;
