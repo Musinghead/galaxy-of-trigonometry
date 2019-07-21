@@ -417,7 +417,7 @@ vec3 CastRay( in Ray_t ray,
             }
         }
 
-        I_local += PhongLighting(shadow_ray, nearest_hitNormal, Ray_t(nearest_hitPos, -ray.d), inShadow, 
+        I_local += PhongLighting(shadow_ray, nearest_hitNormal, -ray.d, inShadow, 
                                  Material[nearest_hitMatID], Light[i]);
             
     }
