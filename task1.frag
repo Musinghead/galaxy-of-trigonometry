@@ -6,8 +6,8 @@
 // STUDENT NAME: 
 // NUS User ID.: 
 //
-// STUDENT NAME: 
-// NUS User ID.: 
+// STUDENT NAME: Hu Qihai
+// NUS User ID.: t0918554
 //
 // STUDENT NAME: Kuang Zhiyi
 // NUS User ID.: t0918062
