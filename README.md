@@ -31,3 +31,14 @@
 | 7     | 40     | 16          | 转动镜头                 |
 | 8     | 56     | 8           | 树落下                   |
 
+## Project Title
+
+"Galaxy of Trigonometry"
+
+## For poster
+
+Galaxy is a mix of chaos and harmony: unpredictable things happen at each moment while a few graceful math rules are revealed. By combining trigonometry and straight-line motions in a well-designed way, this project offers a glimpse of the beauty of Galaxy.
+
+## Project Introduction
+
+This project combines trigonometry and straight-line motions together to produce agreeable structures and uses ray-tracing technique to animate them. It shows how an object performs motions both in straight-line and circle at the same time. It depicts the shape of new moon with a few spheres. Moreover, a galaxy floor lights up the whole scene.
