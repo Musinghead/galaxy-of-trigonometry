@@ -29,7 +29,7 @@
 // Constants.
 //============================================================================
 const int NUM_LIGHTS = 1;
-const int NUM_MATERIALS = 8;
+const int NUM_MATERIALS = 9;
 const int NUM_PLANES = 2;
 const int NUM_SPHERES = 8;
 const int NUM_BOXES = 5;
@@ -68,6 +68,12 @@ const float pole_W = 0.8;
 const float duration_1 = 32.0;
 // motion cycle period of balls
 const float duration_sphere = 4.0;
+// camera distance
+const float camera_distance = 32.0;
+// focus circle
+const float focus_radius = track_L * track_L;
+// dark parameter
+const vec3 focus_darker = vec3(0.1, 0.1, 0.1);
 
 //============================================================================
 // Define new struct types.
@@ -112,6 +118,11 @@ struct Material_t {
     float n;    // The specular reflection exponent. Ranges from 0.0 to 128.0. 
 };
 
+// camera parameter definition
+vec3 cam_pos;
+vec3 cam_lookat;
+vec3 cam_up_vec;
+
 //----------------------------------------------------------------------------
 // The lighting model used here is similar to that on Slides 8 and 12 of 
 // Lecture 11 (Ray Tracing). Here it is computed as
@@ -133,17 +144,6 @@ Sphere_t Sphere[NUM_SPHERES];
 Box_t Box[NUM_BOXES];
 Light_t Light[NUM_LIGHTS];
 Material_t Material[NUM_MATERIALS];
-
-// Position the camera.
-vec3 cam_pos = vec3( 
-    global_center.x, 
-    15.0, 
-    30.0 );
-vec3 cam_lookat = vec3( 
-    global_center.x, 
-    0.0, 
-    0.0 );
-vec3 cam_up_vec = vec3( 0.0, 1.0, 0.0 );
 
 float y_sphere_common(in float offset) {
     if (offset > 20.0 && offset <= 22.0)
@@ -257,6 +257,28 @@ float y_pole(in float offset) {
         return sin((offset - 30.0) / 2.0 * PI / 2.0 + PI / 2.0) * pole_H;
 }
 
+float getTheta(in float offset) {
+    if (offset >= 0.0 && offset <= 16.0)
+        return 150.0 - 60.0 * offset / 16.0;
+    else if (offset > 16.0 && offset <= 26.0)
+        return 90.0;
+    else if (offset > 26.0 && offset <= 32.0)
+        return 90.0 + 60.0 * (offset - 26.0) / 6.0;
+}
+
+float getPhi(in float offset) {
+    if (offset >= 0.0 && offset <= 16.0)
+        return 45.0;
+    else if (offset > 16.0 && offset <= 18.0)
+        return 45.0 - 15.0 * (offset - 16.0) / 2.0;
+    else if (offset > 18.0 && offset <= 24.0)
+        return 30.0;
+    else if (offset > 24.0 && offset <= 26.0)
+        return 30.0 + 15.0 * (offset - 24.0) / 2.0;
+    else if (offset > 26.0 && offset <= 32.0)
+        return 45.0;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // Initializes the scene.
 /////////////////////////////////////////////////////////////////////////////
@@ -264,6 +286,19 @@ void InitScene()
 {
     float time_offset = mod(iTime, duration_1);
     float time_rate = time_offset / duration_1;
+
+    float theta = getTheta(time_offset) / 180.0 * PI;
+    float phi = getPhi(time_offset) / 180.0 * PI;
+
+    // Position the camera.
+    cam_pos = global_center + vec3(
+        camera_distance * sin(phi) * cos(theta),
+        camera_distance * cos(phi),
+        camera_distance * sin(phi) * sin(theta)
+    );
+    cam_lookat = global_center;
+    cam_up_vec = vec3( 0.0, 1.0, 0.0 );
+
     // Horizontal plane.
     Plane[0].A = 0.0;
     Plane[0].B = 1.0;
@@ -456,7 +491,7 @@ void InitScene()
     Material[5].n = 128.0;
 
     // mirror
-    Material[6].k_d = vec3( 0.0, 0.0, 0.0 );
+    Material[6].k_d = vec3( 0.3, 0.3, 0.3 );
     Material[6].k_a = 0.2 * Material[0].k_d;
     Material[6].k_r = 2.0 * Material[0].k_d;
     Material[6].k_rg = 0.5 * Material[0].k_r;
@@ -468,6 +503,13 @@ void InitScene()
     Material[7].k_r = vec3( 1.0, 1.0, 1.0 );
     Material[7].k_rg = 0.5 * Material[4].k_r;
     Material[7].n = 128.0;
+
+    // to store galaxy
+    Material[8].k_d = vec3( 0.0, 0.0, 0.0 );
+    Material[8].k_a = 0.2 * Material[0].k_d;
+    Material[8].k_r = 2.0 * Material[0].k_d;
+    Material[8].k_rg = 0.5 * Material[0].k_r;
+    Material[8].n = 64.0;
 
     // Light 0.
     Light[0].position = vec3( 12.0, 18.0, 15.0 );
@@ -779,6 +821,139 @@ vec3 PhongLighting( in vec3 L, in vec3 N, in vec3 V, in bool inShadow,
     }
 }
 
+// following code uses a shader toy project: universe within
+// to simulate galaxy
+#define S(a, b, t) smoothstep(a, b, t)
+#define NUM_LAYERS 4.
+
+float N21(vec2 p) {
+	vec3 a = fract(vec3(p.xyx) * vec3(213.897, 653.453, 253.098));
+    a += dot(a, a.yzx + 79.76);
+    return fract((a.x + a.y) * a.z);
+}
+
+vec2 GetPos(vec2 id, vec2 offs, float t) {
+    float n = N21(id+offs);
+    float n1 = fract(n*10.);
+    float n2 = fract(n*100.);
+    float a = t+n;
+    return offs + vec2(sin(a*n1), cos(a*n2))*.4;
+}
+
+float GetT(vec2 ro, vec2 rd, vec2 p) {
+	return dot(p-ro, rd); 
+}
+
+float LineDist(vec3 a, vec3 b, vec3 p) {
+	return length(cross(b-a, p-a))/length(p-a);
+}
+
+float df_line( in vec2 a, in vec2 b, in vec2 p)
+{
+    vec2 pa = p - a, ba = b - a;
+	float h = clamp(dot(pa,ba) / dot(ba,ba), 0., 1.);	
+	return length(pa - ba * h);
+}
+
+float line(vec2 a, vec2 b, vec2 uv) {
+    float r1 = .04;
+    float r2 = .01;
+    
+    float d = df_line(a, b, uv);
+    float d2 = length(a-b);
+    float fade = S(1.5, .5, d2);
+    
+    fade += S(.05, .02, abs(d2-.75));
+    return S(r1, r2, d)*fade;
+}
+
+float NetLayer(vec2 st, float n, float t) {
+    vec2 id = floor(st)+n;
+
+    st = fract(st)-.5;
+   
+    vec2 p[9];
+    int i=0;
+    for(float y=-1.; y<=1.; y++) {
+    	for(float x=-1.; x<=1.; x++) {
+            p[i++] = GetPos(id, vec2(x,y), t);
+    	}
+    }
+    
+    float m = 0.;
+    float sparkle = 0.;
+    
+    for(int i=0; i<9; i++) {
+        m += line(p[4], p[i], st);
+
+        float d = length(st-p[i]);
+
+        float s = (.005/(d*d));
+        s *= S(1., .7, d);
+        float pulse = sin((fract(p[i].x)+fract(p[i].y)+t)*5.)*.4+.6;
+        pulse = pow(pulse, 20.);
+
+        s *= pulse;
+        sparkle += s;
+    }
+    
+    m += line(p[1], p[3], st);
+	m += line(p[1], p[5], st);
+    m += line(p[7], p[5], st);
+    m += line(p[7], p[3], st);
+    
+    float sPhase = (sin(t+n)+sin(t*.1))*.25+.5;
+    sPhase += pow(sin(t*.1)*.5+.5, 50.)*5.;
+    m += sparkle*sPhase;//(*.5+.5);
+    
+    return m;
+}
+
+void getGalaxy( out vec4 fragColor, in vec2 fragCoord )
+{
+    vec2 uv = (fragCoord-iResolution.xy*.5)/iResolution.y;
+	vec2 M = iMouse.xy/iResolution.xy-.5;
+    
+    float t = iTime*.1;
+    
+    float s = sin(t);
+    float c = cos(t);
+    mat2 rot = mat2(c, -s, s, c);
+    vec2 st = uv*rot;  
+	M *= rot*2.;
+    
+    float m = 0.;
+    for(float i=0.; i<1.; i+=1./NUM_LAYERS) {
+        float z = fract(t+i);
+        float size = mix(15., 1., z);
+        float fade = S(0., .6, z)*S(1., .8, z);
+        
+        m += fade * NetLayer(st*size-M*z, i, iTime);
+    }
+    
+	float fft  = texelFetch( iChannel0, ivec2(.7,0), 0 ).x;
+    float glow = -uv.y*fft*2.;
+   
+    vec3 baseCol = vec3(s, cos(t*.4), -sin(t*.24))*.4+.6;
+    vec3 col = baseCol*m;
+    col += baseCol*glow;
+    
+    #ifdef SIMPLE
+    uv *= 10.;
+    col = vec3(1)*NetLayer(uv, 0., iTime);
+    uv = fract(uv);
+    //if(uv.x>.98 || uv.y>.98) col += 1.;
+    #else
+    col *= 1.-dot(uv,uv);
+    t = mod(iTime, 230.);
+    col *= S(0., 20., t)*S(224., 200., t);
+    #endif
+    
+    fragColor = vec4(col,1);
+}
+
+const float galaxy_L = 80.0;
+const float galaxy_W = 45.0;
 
 /////////////////////////////////////////////////////////////////////////////
 // Casts a ray into the scene and returns color computed at the nearest
@@ -825,10 +1000,27 @@ vec3 CastRay( in Ray_t ray,
             nearest_t = temp_t;
             nearest_hitPos = temp_hitPos;
             nearest_hitNormal = temp_hitNormal;
-            if (i == 0) 
-                nearest_hitMatID = (
-                    temp_hitPos.x >= (global_center.x - track_L) && 
-                    temp_hitPos.x <= (global_center.x + track_L)) ? 3 : 0;
+            if (i == 0) {
+                // get galaxy color
+                float galaxy_x = temp_hitPos.x - global_center.x + galaxy_L / 2.0;
+                float galaxy_y = temp_hitPos.z - global_center.z + galaxy_W / 2.0;
+                vec2 galaxy_coord = vec2(galaxy_x / galaxy_L * iResolution.x, galaxy_y / galaxy_W * iResolution.y);
+                vec4 galaxy_color;
+                getGalaxy(galaxy_color, galaxy_coord);
+                // if inside the focus circle, make it darker
+                float focus_distance = (temp_hitPos.x - global_center.x) * (temp_hitPos.x - global_center.x) + 
+                              (temp_hitPos.z - global_center.z) * (temp_hitPos.z - global_center.z);
+                if (focus_distance <= focus_radius) galaxy_color.rgb *= focus_darker;
+                Material[8].k_d = galaxy_color.rgb;
+                Material[8].k_a = 0.2 * Material[0].k_d;
+                Material[8].k_r = 2.0 * Material[0].k_d;
+                Material[8].k_rg = 0.5 * Material[0].k_r;
+                Material[8].n = 64.0;
+                nearest_hitMatID = 8;
+            }
+                // nearest_hitMatID = (
+                //     temp_hitPos.x >= (global_center.x - track_L) && 
+                //     temp_hitPos.x <= (global_center.x + track_L)) ? 3 : 0;
             else if (i == 1)
                 nearest_hitMatID = Plane[i].materialID;
         }
