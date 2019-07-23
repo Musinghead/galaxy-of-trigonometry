@@ -29,10 +29,10 @@
 // Constants.
 //============================================================================
 const int NUM_LIGHTS = 1;
-const int NUM_MATERIALS = 7;
+const int NUM_MATERIALS = 8;
 const int NUM_PLANES = 2;
-const int NUM_SPHERES = 4;
-const int NUM_BOXES = 4;
+const int NUM_SPHERES = 8;
+const int NUM_BOXES = 5;
 
 const vec3 BACKGROUND_COLOR = vec3( 0.1, 0.2, 0.6 );
 
@@ -52,10 +52,22 @@ const int NUM_ITERATIONS = 2;
 
 // center of global scene
 const vec3 global_center = vec3(0.0, 0.0, 10.0);
+// sphere
+const float sphere_radius_1 = 0.5;
+const float sphere_radius_2 = 0.3;
 // scene 1, size of box track
 const float track_L = 8.0;
 const float track_H = 4.0;
 const float track_W = 0.4;
+const float movement = track_H + 2.0 * sphere_radius_1;
+// scene 1, size of flag pole
+const float pole_L = 0.8;
+const float pole_H = 2.0 * movement;
+const float pole_W = 0.8;
+// session 1
+const float duration_1 = 32.0;
+// motion cycle period of balls
+const float duration_sphere = 4.0;
 
 //============================================================================
 // Define new struct types.
@@ -75,12 +87,14 @@ struct Sphere_t {
     vec3 center;
     float radius;
     int materialID;
+    bool visible;
 };
 
 struct Box_t {
     vec3 corner1;
     vec3 corner2;
     float angle; // only rotate around y axis
+    bool visible;
     int materialID;
 };
 
@@ -131,11 +145,125 @@ vec3 cam_lookat = vec3(
     0.0 );
 vec3 cam_up_vec = vec3( 0.0, 1.0, 0.0 );
 
+float y_sphere_common(in float offset) {
+    if (offset > 20.0 && offset <= 22.0)
+        return sin((offset - 20.0) / 2.0 * PI / 2.0) * movement + movement;
+    else if (offset > 22.0 && offset <= 30.0)
+        return movement * 2.0;
+    else if (offset > 30.0 && offset <= 32.0)
+        return sin((offset - 30.0) / 2.0 * PI / 2.0 + PI / 2.0) * 2.0 * movement;
+}
+
+float y_sphere_0(in float offset) {
+    if (offset >= 0.0 && offset <= 2.0) 
+        return sin(offset / 2.0 * PI / 2.0) * movement;
+    else if (offset > 2.0 && offset <= 20.0)
+        return movement;
+    else 
+        return y_sphere_common(offset); 
+    
+}
+
+float y_sphere_1(in float offset) {
+    if (offset >= 0.0 && offset <= 4.0) 
+        return 0.0;
+    else if (offset > 4.0 && offset <= 6.0)
+        return sin((offset - 4.0) / 2.0 * PI / 2.0) * movement;
+    else if (offset > 6.0 && offset <= 20.0)
+        return movement;
+    else
+        return y_sphere_common(offset);
+}
+
+float y_sphere_2(in float offset) {
+    if (offset >= 0.0 && offset <= 8.0) 
+        return 0.0;
+    else if (offset > 8.0 && offset <= 10.0)
+        return sin((offset - 8.0) / 2.0 * PI / 2.0) * movement;
+    else if (offset > 10.0 && offset <= 20.0)
+        return movement;
+    else 
+        return y_sphere_common(offset);
+}
+
+float y_sphere_3(in float offset) {
+    if (offset >= 0.0 && offset <= 12.0) 
+        return 0.0;
+    else if (offset > 12.0 && offset <= 14.0)
+        return sin((offset - 12.0) / 2.0 * PI / 2.0) * movement;
+    else if (offset > 14.0 && offset <= 20.0)
+        return movement;
+    else 
+        return y_sphere_common(offset);
+}
+
+float y_track_common(in float offset) {
+    if (offset > 16.0 && offset <= 18.0)
+        return sin((offset - 16.0) / 2.0 * PI / 2.0 + PI / 2.0) * movement;
+    else if (offset > 18.0 && offset <= 32.0)
+        return 0.0;
+}
+float y_track_0(in float offset) {
+    if (offset >= 0.0 && offset <= 2.0) 
+        return sin(offset / 2.0 * PI / 2.0) * movement;
+    else if (offset > 2.0 && offset <= 16.0)
+        return movement;
+    else 
+        return y_track_common(offset);
+    
+}
+
+float y_track_1(in float offset) {
+    if (offset >= 0.0 && offset <= 4.0)
+        return 0.0;
+    else if (offset > 4.0 && offset <= 6.0) 
+        return sin((offset - 4.0) / 2.0 * PI / 2.0) * movement;
+    else if (offset > 6.0 && offset <= 16.0)
+        return movement;
+    else 
+        return y_track_common(offset);
+}
+
+float y_track_2(in float offset) {
+    if (offset >= 0.0 && offset <= 8.0)
+        return 0.0;
+    else if (offset > 8.0 && offset <= 10.0) 
+        return sin((offset - 8.0) / 2.0 * PI / 2.0) * movement;
+    else if (offset > 10.0 && offset <= 16.0)
+        return movement;
+    else 
+        return y_track_common(offset);
+}
+
+float y_track_3(in float offset) {
+    if (offset >= 0.0 && offset <= 12.0)
+        return 0.0;
+    else if (offset > 12.0 && offset <= 14.0) 
+        return sin((offset - 12.0) / 2.0 * PI / 2.0) * movement;
+    else if (offset > 14.0 && offset <= 16.0)
+        return movement;
+    else 
+        return y_track_common(offset);
+}
+
+float y_pole(in float offset) {
+    if (offset >= 0.0 && offset <= 20.0)
+        return 0.0;
+    else if (offset > 20.0 && offset <= 22.0)
+        return sin((offset - 20.0) / 2.0 * PI / 2.0) * pole_H;
+    else if (offset > 22.0 && offset <= 30.0)
+        return pole_H;
+    else if (offset > 30.0 && offset <= 32.0)
+        return sin((offset - 30.0) / 2.0 * PI / 2.0 + PI / 2.0) * pole_H;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // Initializes the scene.
 /////////////////////////////////////////////////////////////////////////////
 void InitScene()
 {
+    float time_offset = mod(iTime, duration_1);
+    float time_rate = time_offset / duration_1;
     // Horizontal plane.
     Plane[0].A = 0.0;
     Plane[0].B = 1.0;
@@ -150,83 +278,140 @@ void InitScene()
     Plane[1].D = 2.0;
     Plane[1].materialID = 6;
 
-    // Center bouncing sphere.
-    // Sphere[0].center = vec3( 0.0, abs(sin(2.0 * iTime)) + 0.7, 0.0 );
+    // rotate position
+    float sphere_offset = mod(time_offset, duration_sphere);
+    float sphere_rate = sphere_offset / duration_sphere;
+
+    // four main balls
     Sphere[0].center = vec3( 
         global_center.x, 
-        track_H + 0.5, 
-        global_center.z + track_L / 2.0 * sin(2.0 * iTime) );
-    Sphere[0].radius = 0.5;
+        y_sphere_0(time_offset) - sphere_radius_1, 
+        global_center.z + track_L / 2.0 * sin(sphere_rate * 2.0 * PI) );
+    Sphere[0].radius = sphere_radius_1;
+    Sphere[0].visible = (time_offset >= 0.0 && time_offset <= 32.0);
     Sphere[0].materialID = 1;
     
     Sphere[1].center = vec3( 
-        global_center.x + track_L / 2.0 * sin(2.0 * iTime + 45.0 / 180.0 * PI) / sqrt(2.0), 
-        track_H + 0.5,  
-        global_center.z + track_L / 2.0 * sin(2.0 * iTime + 45.0 / 180.0 * PI) / sqrt(2.0));
-    Sphere[1].radius = 0.5;
+        global_center.x + track_L / 2.0 * sin(sphere_rate * 2.0 * PI + 90.0 / 180.0 * PI), 
+        y_sphere_1(time_offset) - sphere_radius_1, 
+        global_center.z );
+    Sphere[1].radius = sphere_radius_1;
+    Sphere[1].visible = (time_offset >= 4.0 && time_offset <= 32.0);
     Sphere[1].materialID = 2;
 
     Sphere[2].center = vec3( 
-        global_center.x + track_L / 2.0 * sin(2.0 * iTime + 90.0 / 180.0 * PI), 
-        track_H + 0.5, 
-        global_center.z );
-    Sphere[2].radius = 0.5;
-    Sphere[2].materialID = 3;
+        global_center.x + track_L / 2.0 * sin(sphere_rate * 2.0 * PI + 45.0 / 180.0 * PI) / sqrt(2.0), 
+        y_sphere_2(time_offset) - sphere_radius_1,  
+        global_center.z + track_L / 2.0 * sin(sphere_rate * 2.0 * PI + 45.0 / 180.0 * PI) / sqrt(2.0));
+    Sphere[2].radius = sphere_radius_1;
+    Sphere[2].visible = (time_offset >= 8.0 && time_offset <= 32.0);
+    Sphere[2].materialID = 2;
 
     Sphere[3].center = vec3( 
-        global_center.x + track_L / 2.0 * sin(2.0 * iTime + 135.0 / 180.0 * PI) / sqrt(2.0), 
-        track_H + 0.5,  
-        global_center.z - track_L / 2.0 * sin(2.0 * iTime + 135.0 / 180.0 * PI) / sqrt(2.0));
-    Sphere[3].radius = 0.5;
-    Sphere[3].materialID = 4;
+        global_center.x + track_L / 2.0 * sin(sphere_rate * 2.0 * PI + 135.0 / 180.0 * PI) / sqrt(2.0), 
+        y_sphere_3(time_offset) - sphere_radius_1,  
+        global_center.z - track_L / 2.0 * sin(sphere_rate * 2.0 * PI + 135.0 / 180.0 * PI) / sqrt(2.0));
+    Sphere[3].radius = sphere_radius_1;
+    Sphere[3].visible = (time_offset >= 12.0 && time_offset <= 32.0);
+    Sphere[3].materialID = 2;
+
+    // four assistant balls
+    Sphere[4].center = vec3( 
+        global_center.x, 
+        y_pole(time_offset) - pole_H / 5.0 - sphere_radius_2, 
+        global_center.z + track_L / 2.0 * sin(sphere_rate * 2.0 * PI) );
+    Sphere[4].radius = sphere_radius_2;
+    Sphere[4].visible = (time_offset >= 20.0 && time_offset <= 32.0);
+    Sphere[4].materialID = 7;
+
+    Sphere[5].center = vec3( 
+        global_center.x + track_L / 2.0 * sin(sphere_rate * 2.0 * PI + 90.0 / 180.0 * PI), 
+        y_pole(time_offset) - pole_H / 5.0 - sphere_radius_2, 
+        global_center.z );
+    Sphere[5].radius = sphere_radius_2;
+    Sphere[5].visible = (time_offset >= 20.0 && time_offset <= 32.0);
+    Sphere[5].materialID = 4;
+
+    Sphere[6].center = vec3( 
+        global_center.x + track_L / 2.0 * sin(sphere_rate * 2.0 * PI + 45.0 / 180.0 * PI) / sqrt(2.0), 
+        y_pole(time_offset) - pole_H / 5.0 - sphere_radius_2,  
+        global_center.z + track_L / 2.0 * sin(sphere_rate * 2.0 * PI + 45.0 / 180.0 * PI) / sqrt(2.0));
+    Sphere[6].radius = sphere_radius_2;
+    Sphere[6].visible = (time_offset >= 20.0 && time_offset <= 32.0);
+    Sphere[6].materialID = 4;
+
+    Sphere[7].center = vec3( 
+        global_center.x + track_L / 2.0 * sin(sphere_rate * 2.0 * PI + 135.0 / 180.0 * PI) / sqrt(2.0), 
+        y_pole(time_offset) - pole_H / 5.0 - sphere_radius_2,  
+        global_center.z - track_L / 2.0 * sin(sphere_rate * 2.0 * PI + 135.0 / 180.0 * PI) / sqrt(2.0));
+    Sphere[7].radius = sphere_radius_2;
+    Sphere[7].visible = (time_offset >= 20.0 && time_offset <= 32.0);
+    Sphere[7].materialID = 4;
 
     // track 1
     Box[0].corner1 = vec3(
         global_center.x - track_W / 2.0, 
-        0.0, 
+        y_track_0(time_offset) - track_H - 2.0 * sphere_radius_1, 
         global_center.z - track_L / 2.0);
     Box[0].corner2 = vec3(
         global_center.x + track_W / 2.0, 
-        track_H, 
+        y_track_0(time_offset) - 2.0 * sphere_radius_1, 
         global_center.z + track_L / 2.0);
     Box[0].angle = 0.0;
+    Box[0].visible = (time_offset >= 0.0 && time_offset <= 18.0);
     Box[0].materialID = 5;
 
     // track 2
     Box[1].corner1 = vec3(
         global_center.x - track_L / 2.0, 
-        0.0, 
+        y_track_1(time_offset) - track_H - 2.0 * sphere_radius_1, 
         global_center.z - track_W / 2.0);
     Box[1].corner2 = vec3(
         global_center.x + track_L / 2.0, 
-        track_H, 
+        y_track_1(time_offset) - 2.0 * sphere_radius_1, 
         global_center.z + track_W / 2.0);
     Box[1].angle = 0.0;
+    Box[1].visible = (time_offset >= 4.0 && time_offset <= 18.0);
     Box[1].materialID = 5;
 
     // track 3
     Box[2].corner1 = vec3(
         global_center.x + (track_W / 2.0) / sqrt(2.0) - (track_L / 2.0) / sqrt(2.0), 
-        0.0, 
+        y_track_2(time_offset) - track_H - 2.0 * sphere_radius_1, 
         global_center.z - (track_W / 2.0) / sqrt(2.0) - (track_L / 2.0) / sqrt(2.0));
     Box[2].corner2 = vec3(
         global_center.x - (track_W / 2.0) / sqrt(2.0) + (track_L / 2.0) / sqrt(2.0), 
-        track_H, 
+        y_track_2(time_offset) - 2.0 * sphere_radius_1, 
         global_center.z + (track_W / 2.0) / sqrt(2.0) + (track_L / 2.0) / sqrt(2.0));
     Box[2].angle = 45.0 / 180.0 * PI;
+    Box[2].visible = (time_offset >= 8.0 && time_offset <= 18.0);
     Box[2].materialID = 5;
 
     // track 3
     Box[3].corner1 = vec3(
         global_center.x + (track_W / 2.0) / sqrt(2.0) - (track_L / 2.0) / sqrt(2.0), 
-        0.0, 
+        y_track_3(time_offset) - track_H - 2.0 * sphere_radius_1, 
         global_center.z + (track_W / 2.0) / sqrt(2.0) + (track_L / 2.0) / sqrt(2.0));
     Box[3].corner2 = vec3(
         global_center.x - (track_W / 2.0) / sqrt(2.0) + (track_L / 2.0) / sqrt(2.0), 
-        track_H, 
+        y_track_3(time_offset) - 2.0 * sphere_radius_1, 
         global_center.z - (track_W / 2.0) / sqrt(2.0) - (track_L / 2.0) / sqrt(2.0));
     Box[3].angle = -45.0 / 180.0 * PI;
+    Box[3].visible = (time_offset >= 12.0 && time_offset <= 18.0);
     Box[3].materialID = 5;
+
+    // long thin flagpole
+    Box[4].corner1 = vec3(
+        global_center.x + track_L / 4.0 * cos(sphere_rate * 2.0 * PI) - pole_L / 2.0, 
+        y_pole(time_offset) - pole_H, 
+        global_center.z + track_L / 4.0 * sin(sphere_rate * 2.0 * PI) - pole_W / 2.0);
+    Box[4].corner2 = vec3(
+        global_center.x + track_L / 4.0 * cos(sphere_rate * 2.0 * PI) + pole_L / 2.0, 
+        y_pole(time_offset), 
+        global_center.z + track_L / 4.0 * sin(sphere_rate * 2.0 * PI) + pole_W / 2.0);
+    Box[4].angle = 0.0;
+    Box[4].visible = (time_offset >= 20.0 && time_offset <= 32.0);
+    Box[4].materialID = 5;
     
     // Silver material.
     Material[0].k_d = vec3( 0.4, 0.4, 0.4 );
@@ -235,29 +420,29 @@ void InitScene()
     Material[0].k_rg = 0.5 * Material[0].k_r;
     Material[0].n = 64.0;
 
-    // blue level 1
-    Material[1].k_d = vec3( 0.8, 0.4, 0.4 );
+    // red ball
+    Material[1].k_d = vec3( 1.0, 0.0, 1.0 );
     Material[1].k_a = 0.2 * Material[1].k_d;
     Material[1].k_r = vec3(1.0, 1.0, 1.0);
     Material[1].k_rg = 0.5 * Material[1].k_r;
     Material[1].n = 128.0;
 
-    // blue level 2
-    Material[2].k_d = vec3( 0.4, 0.4, 0.8 );
+    // blue ball
+    Material[2].k_d = vec3( 0.1176, 0.5647, 1.0 );
     Material[2].k_a = 0.2 * Material[2].k_d;
     Material[2].k_r = vec3( 1.0, 1.0, 1.0 );
     Material[2].k_rg = 0.5 * Material[2].k_r;
     Material[2].n = 128.0;
 
-    // blue level 3
-    Material[3].k_d = vec3( 0.4, 0.4, 0.8 );
+    // light floor
+    Material[3].k_d = vec3( 0.6, 0.6, 0.6 );
     Material[3].k_a = 0.2 * Material[3].k_d;
-    Material[3].k_r = vec3( 1.0, 1.0, 1.0 );
+    Material[3].k_r = 2.0 * Material[3].k_d;
     Material[3].k_rg = 0.5 * Material[3].k_r;
-    Material[3].n = 128.0;
+    Material[3].n = 64.0;
 
-    // blue level 4
-    Material[4].k_d = vec3( 0.4, 0.4, 0.8 );
+    // orange ball
+    Material[4].k_d = vec3( 1.0, 0.647, 0.0 );
     Material[4].k_a = 0.2 * Material[4].k_d;
     Material[4].k_r = vec3( 1.0, 1.0, 1.0 );
     Material[4].k_rg = 0.5 * Material[4].k_r;
@@ -276,6 +461,13 @@ void InitScene()
     Material[6].k_r = 2.0 * Material[0].k_d;
     Material[6].k_rg = 0.5 * Material[0].k_r;
     Material[6].n = 64.0;
+
+    // fire brick
+    Material[7].k_d = vec3( 1.0, 0.1882, 0.1882 );
+    Material[7].k_a = 0.2 * Material[4].k_d;
+    Material[7].k_r = vec3( 1.0, 1.0, 1.0 );
+    Material[7].k_rg = 0.5 * Material[4].k_r;
+    Material[7].n = 128.0;
 
     // Light 0.
     Light[0].position = vec3( 12.0, 18.0, 15.0 );
@@ -490,10 +682,6 @@ bool IntersectBox(in Box_t box, in Ray_t ray, in float tmin, in float tmax,
     t = largest_near;
     hitPos = near_hitPos;
     hitNormal = near_hitNormal;
-    // if (!hashit_y_neg) return false;
-    // t = t_y_neg;    
-    // hitPos = hitPos_y_neg;
-    // hitNormal = hitNormal_y_neg;
 
     return true;
 }
@@ -637,11 +825,17 @@ vec3 CastRay( in Ray_t ray,
             nearest_t = temp_t;
             nearest_hitPos = temp_hitPos;
             nearest_hitNormal = temp_hitNormal;
-            nearest_hitMatID = Plane[i].materialID;
+            if (i == 0) 
+                nearest_hitMatID = (
+                    temp_hitPos.x >= (global_center.x - track_L) && 
+                    temp_hitPos.x <= (global_center.x + track_L)) ? 3 : 0;
+            else if (i == 1)
+                nearest_hitMatID = Plane[i].materialID;
         }
     }
 
     for (int i = 0 ; i < NUM_SPHERES ; i++) {
+        if (!Sphere[i].visible) continue;
         temp_hasHit = IntersectSphere(Sphere[i], ray, DEFAULT_TMIN, DEFAULT_TMAX, 
                              temp_t, temp_hitPos, temp_hitNormal);
         if (temp_hasHit && temp_t < nearest_t) {
@@ -654,6 +848,7 @@ vec3 CastRay( in Ray_t ray,
     }
 
     for (int i = 0 ; i < NUM_BOXES ; i++) {
+        if (!Box[i].visible) continue;
         temp_hasHit = IntersectBox(Box[i], ray, DEFAULT_TMIN, DEFAULT_TMAX, 
                              temp_t, temp_hitPos, temp_hitNormal);
         if (temp_hasHit && temp_t < nearest_t) {
@@ -705,6 +900,7 @@ vec3 CastRay( in Ray_t ray,
 
         if (!inShadow) {
              for (int k = 0 ; k < NUM_SPHERES ; k++) {
+                 if (!Sphere[k].visible) continue;
                  temp_inShadow = IntersectSphere(Sphere[k], shadow_ray, DEFAULT_TMIN, tmax_to_light);
                  if (temp_inShadow) {
                      inShadow = temp_inShadow;
@@ -715,6 +911,7 @@ vec3 CastRay( in Ray_t ray,
 
         if (!inShadow) {
              for (int m = 0 ; m < NUM_BOXES ; m++) {
+                 if (!Box[m].visible) continue;
                  temp_inShadow = IntersectBox(Box[m], shadow_ray, DEFAULT_TMIN, tmax_to_light);
                  if (temp_inShadow) {
                      inShadow = temp_inShadow;

@@ -17,4 +17,16 @@
 | 6     | Interesting ball | https://www.shadertoy.com/view/XsB3W3 |
 | 7     | Crazy Universe | https://www.shadertoy.com/view/XlccRB |
 
-## session task1
+## Script
+
+| index | Offset | duration(s) | description              |
+| ----- | ------ | ----------- | ------------------------ |
+| 0     | 0      | 4 * (2 + 2) | 小球随轨道升起2s，停留2s |
+| 1     | 16     | 2           | 轨道下降、镜头上拉2s     |
+| 2     | 18     | 2           | 停留2s                   |
+| 3     | 20     | 2           | 旗杆、另四个小球升起     |
+| 4     | 22     | 4 * 2       | 旋转两周                 |
+| 5     | 30     | 2           | 旗杆、小球下降           |
+|       |        |             |                          |
+|       |        |             |                          |
+
