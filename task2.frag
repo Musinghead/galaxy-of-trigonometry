@@ -3,8 +3,8 @@
 //
 // GROUP NUMBER: 1
 //
-// STUDENT NAME: 
-// NUS User ID.: 
+// STUDENT NAME: Bi Hanqi
+// NUS User ID.: t0918612
 //
 // STUDENT NAME: 
 // NUS User ID.: 
