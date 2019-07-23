@@ -28,11 +28,11 @@
 //============================================================================
 // Constants.
 //============================================================================
-const int NUM_LIGHTS = 2;
-const int NUM_MATERIALS = 5;
+const int NUM_LIGHTS = 1;
+const int NUM_MATERIALS = 7;
 const int NUM_PLANES = 2;
 const int NUM_SPHERES = 4;
-const int NUM_BOXES = 1;
+const int NUM_BOXES = 4;
 
 const vec3 BACKGROUND_COLOR = vec3( 0.1, 0.2, 0.6 );
 
@@ -50,6 +50,12 @@ const float DEFAULT_TMAX = 10.0e6;
 // We are using iterations to replace recursions.
 const int NUM_ITERATIONS = 2;
 
+// center of global scene
+const vec3 global_center = vec3(0.0, 0.0, 10.0);
+// scene 1, size of box track
+const float track_L = 8.0;
+const float track_H = 4.0;
+const float track_W = 0.4;
 
 //============================================================================
 // Define new struct types.
@@ -74,6 +80,7 @@ struct Sphere_t {
 struct Box_t {
     vec3 corner1;
     vec3 corner2;
+    float angle; // only rotate around y axis
     int materialID;
 };
 
@@ -113,7 +120,16 @@ Box_t Box[NUM_BOXES];
 Light_t Light[NUM_LIGHTS];
 Material_t Material[NUM_MATERIALS];
 
-
+// Position the camera.
+vec3 cam_pos = vec3( 
+    global_center.x, 
+    15.0, 
+    30.0 );
+vec3 cam_lookat = vec3( 
+    global_center.x, 
+    0.0, 
+    0.0 );
+vec3 cam_up_vec = vec3( 0.0, 1.0, 0.0 );
 
 /////////////////////////////////////////////////////////////////////////////
 // Initializes the scene.
@@ -131,89 +147,145 @@ void InitScene()
     Plane[1].A = 0.0;
     Plane[1].B = 0.0;
     Plane[1].C = 1.0;
-    Plane[1].D = 0.0;
-    Plane[1].materialID = 0;
+    Plane[1].D = 2.0;
+    Plane[1].materialID = 6;
 
     // Center bouncing sphere.
     // Sphere[0].center = vec3( 0.0, abs(sin(2.0 * iTime)) + 0.7, 0.0 );
     Sphere[0].center = vec3( 
-        0.0, 
-        0.5, 
-        6.0 + 3.0 * sin(2.0 * iTime) );
+        global_center.x, 
+        track_H + 0.5, 
+        global_center.z + track_L / 2.0 * sin(2.0 * iTime) );
     Sphere[0].radius = 0.5;
     Sphere[0].materialID = 1;
-
-    // Circling sphere.
-    // Sphere[1].center = vec3( 1.5 * cos(iTime), 0.5, 1.5 * sin(iTime) );
+    
     Sphere[1].center = vec3( 
-        3.0 * sin(2.0 * iTime + 90.0 / 180.0 * PI), 
-        0.5, 
-        6.0 );
+        global_center.x + track_L / 2.0 * sin(2.0 * iTime + 45.0 / 180.0 * PI) / sqrt(2.0), 
+        track_H + 0.5,  
+        global_center.z + track_L / 2.0 * sin(2.0 * iTime + 45.0 / 180.0 * PI) / sqrt(2.0));
     Sphere[1].radius = 0.5;
     Sphere[1].materialID = 2;
 
     Sphere[2].center = vec3( 
-        3.0 * sin(2.0 * iTime + 45.0 / 180.0 * PI) / sqrt(2.0), 
-        0.5,  
-        6.0 + 3.0 * sin(2.0 * iTime + 45.0 / 180.0 * PI) / sqrt(2.0));
+        global_center.x + track_L / 2.0 * sin(2.0 * iTime + 90.0 / 180.0 * PI), 
+        track_H + 0.5, 
+        global_center.z );
     Sphere[2].radius = 0.5;
     Sphere[2].materialID = 3;
 
     Sphere[3].center = vec3( 
-        3.0 * sin(2.0 * iTime + 135.0 / 180.0 * PI) / sqrt(2.0), 
-        0.5,  
-        6.0 - 3.0 * sin(2.0 * iTime + 135.0 / 180.0 * PI) / sqrt(2.0));
+        global_center.x + track_L / 2.0 * sin(2.0 * iTime + 135.0 / 180.0 * PI) / sqrt(2.0), 
+        track_H + 0.5,  
+        global_center.z - track_L / 2.0 * sin(2.0 * iTime + 135.0 / 180.0 * PI) / sqrt(2.0));
     Sphere[3].radius = 0.5;
     Sphere[3].materialID = 4;
 
-    // test box
-    Box[0].corner1 = vec3(1.0, 3.5, 1.0);
-    Box[0].corner2 = vec3(0.2, 3.0, 4.0);
-    Box[0].materialID = 3;
+    // track 1
+    Box[0].corner1 = vec3(
+        global_center.x - track_W / 2.0, 
+        0.0, 
+        global_center.z - track_L / 2.0);
+    Box[0].corner2 = vec3(
+        global_center.x + track_W / 2.0, 
+        track_H, 
+        global_center.z + track_L / 2.0);
+    Box[0].angle = 0.0;
+    Box[0].materialID = 5;
 
+    // track 2
+    Box[1].corner1 = vec3(
+        global_center.x - track_L / 2.0, 
+        0.0, 
+        global_center.z - track_W / 2.0);
+    Box[1].corner2 = vec3(
+        global_center.x + track_L / 2.0, 
+        track_H, 
+        global_center.z + track_W / 2.0);
+    Box[1].angle = 0.0;
+    Box[1].materialID = 5;
+
+    // track 3
+    Box[2].corner1 = vec3(
+        global_center.x + (track_W / 2.0) / sqrt(2.0) - (track_L / 2.0) / sqrt(2.0), 
+        0.0, 
+        global_center.z - (track_W / 2.0) / sqrt(2.0) - (track_L / 2.0) / sqrt(2.0));
+    Box[2].corner2 = vec3(
+        global_center.x - (track_W / 2.0) / sqrt(2.0) + (track_L / 2.0) / sqrt(2.0), 
+        track_H, 
+        global_center.z + (track_W / 2.0) / sqrt(2.0) + (track_L / 2.0) / sqrt(2.0));
+    Box[2].angle = 45.0 / 180.0 * PI;
+    Box[2].materialID = 5;
+
+    // track 3
+    Box[3].corner1 = vec3(
+        global_center.x + (track_W / 2.0) / sqrt(2.0) - (track_L / 2.0) / sqrt(2.0), 
+        0.0, 
+        global_center.z + (track_W / 2.0) / sqrt(2.0) + (track_L / 2.0) / sqrt(2.0));
+    Box[3].corner2 = vec3(
+        global_center.x - (track_W / 2.0) / sqrt(2.0) + (track_L / 2.0) / sqrt(2.0), 
+        track_H, 
+        global_center.z - (track_W / 2.0) / sqrt(2.0) - (track_L / 2.0) / sqrt(2.0));
+    Box[3].angle = -45.0 / 180.0 * PI;
+    Box[3].materialID = 5;
+    
     // Silver material.
-    Material[0].k_d = vec3( 0.5, 0.5, 0.5 );
+    Material[0].k_d = vec3( 0.4, 0.4, 0.4 );
     Material[0].k_a = 0.2 * Material[0].k_d;
     Material[0].k_r = 2.0 * Material[0].k_d;
     Material[0].k_rg = 0.5 * Material[0].k_r;
     Material[0].n = 64.0;
 
-    // Gold material.
-    Material[1].k_d = vec3( 0.8, 0.7, 0.1 );
+    // blue level 1
+    Material[1].k_d = vec3( 0.8, 0.4, 0.4 );
     Material[1].k_a = 0.2 * Material[1].k_d;
-    Material[1].k_r = 2.0 * Material[1].k_d;
+    Material[1].k_r = vec3(1.0, 1.0, 1.0);
     Material[1].k_rg = 0.5 * Material[1].k_r;
-    Material[1].n = 64.0;
+    Material[1].n = 128.0;
 
-    // Green plastic material.
-    Material[2].k_d = vec3( 0.0, 0.8, 0.0 );
+    // blue level 2
+    Material[2].k_d = vec3( 0.4, 0.4, 0.8 );
     Material[2].k_a = 0.2 * Material[2].k_d;
     Material[2].k_r = vec3( 1.0, 1.0, 1.0 );
     Material[2].k_rg = 0.5 * Material[2].k_r;
     Material[2].n = 128.0;
 
-    // box test
-    Material[3].k_d = vec3( 1.0, 0.0, 0.0 );
+    // blue level 3
+    Material[3].k_d = vec3( 0.4, 0.4, 0.8 );
     Material[3].k_a = 0.2 * Material[3].k_d;
     Material[3].k_r = vec3( 1.0, 1.0, 1.0 );
     Material[3].k_rg = 0.5 * Material[3].k_r;
     Material[3].n = 128.0;
 
-    Material[4].k_d = vec3( 0.0, 0.0, 1.0 );
-    Material[4].k_a = 0.2 * Material[3].k_d;
+    // blue level 4
+    Material[4].k_d = vec3( 0.4, 0.4, 0.8 );
+    Material[4].k_a = 0.2 * Material[4].k_d;
     Material[4].k_r = vec3( 1.0, 1.0, 1.0 );
-    Material[4].k_rg = 0.5 * Material[3].k_r;
+    Material[4].k_rg = 0.5 * Material[4].k_r;
     Material[4].n = 128.0;
 
+    // box track
+    Material[5].k_d = vec3( 1.0, 1.0, 1.0 );
+    Material[5].k_a = 0.2 * Material[3].k_d;
+    Material[5].k_r = vec3( 1.0, 1.0, 1.0 );
+    Material[5].k_rg = 0.5 * Material[3].k_r;
+    Material[5].n = 128.0;
+
+    // mirror
+    Material[6].k_d = vec3( 0.0, 0.0, 0.0 );
+    Material[6].k_a = 0.2 * Material[0].k_d;
+    Material[6].k_r = 2.0 * Material[0].k_d;
+    Material[6].k_rg = 0.5 * Material[0].k_r;
+    Material[6].n = 64.0;
+
     // Light 0.
-    Light[0].position = vec3( 4.0, 10.0, 3.0 );
+    Light[0].position = vec3( 12.0, 18.0, 15.0 );
     Light[0].I_a = vec3( 0.1, 0.1, 0.1 );
     Light[0].I_source = vec3( 1.0, 1.0, 1.0 );
 
     // Light 1.
-    Light[1].position = vec3( -4.0, 9.0, 3.0 );
-    Light[1].I_a = vec3( 0.1, 0.1, 0.1 );
-    Light[1].I_source = vec3( 1.0, 1.0, 1.0 );
+    // Light[1].position = vec3( -4.0, 20.0, 3.0 );
+    // Light[1].I_a = vec3( 0.1, 0.1, 0.1 );
+    // Light[1].I_source = vec3( 0.8, 0.8, 0.8 );
 }
 
 
@@ -346,93 +418,78 @@ bool IntersectBox(in Box_t box, in Ray_t ray, in float tmin, in float tmax,
                   out float t, out vec3 hitPos, out vec3 hitNormal )
 {
     Plane_t faces[6];
-    faces[0] = Plane_t(-1.0, 0.0, 0.0, box.corner1.x, box.materialID);
-    faces[1] = Plane_t(1.0, 0.0, 0.0, -box.corner2.x, box.materialID);
-    faces[2] = Plane_t(0.0, -1.0, 0.0, box.corner1.y, box.materialID);
-    faces[3] = Plane_t(0.0, 1.0, 0.0, -box.corner2.y, box.materialID);
-    faces[4] = Plane_t(0.0, 0.0, -1.0, box.corner1.z, box.materialID);
-    faces[5] = Plane_t(0.0, 0.0, 1.0, -box.corner2.z, box.materialID);
+    vec3 faces_normal[6];
+    faces_normal[0] = vec3(-cos(box.angle), 0.0, -sin(box.angle));
+    faces_normal[1] = vec3(cos(box.angle), 0.0, sin(box.angle));
+    faces_normal[2] = vec3(0.0, -1.0, 0.0);
+    faces_normal[3] = vec3(0.0, 1.0, 0.0);
+    faces_normal[4] = vec3(sin(box.angle), 0.0, -cos(box.angle));
+    faces_normal[5] = vec3(-sin(box.angle), 0.0, cos(box.angle));
+
+    for (int i = 0 ; i < 3 ; i++) {
+        faces[2 * i] = Plane_t(faces_normal[2 * i].x, faces_normal[2 * i].y, faces_normal[2 * i].z,
+                              -dot(faces_normal[2 * i], box.corner1), box.materialID);
+        faces[2 * i + 1] = Plane_t(faces_normal[2 * i + 1].x, faces_normal[2 * i + 1].y, faces_normal[2 * i + 1].z,
+                      -dot(faces_normal[2 * i + 1], box.corner2), box.materialID);
+    }
     
     float largest_near = tmin;
     float smallest_far = tmax;
 
+    vec3 near_hitPos;
+    vec3 near_hitNormal;
+    
     for (int i = 0 ; i < 3 ; i++) {
+        float t_neg;
+        vec3 hitPos_neg;
+        vec3 hitNormal_neg;
+        bool hashit_neg = IntersectPlane(faces[2 * i], ray, tmin, tmax,
+                                         t_neg, hitPos_neg, hitNormal_neg);
         
-    }
+        float t_pos;
+        vec3 hitPos_pos;
+        vec3 hitNormal_pos;
+        bool hashit_pos = IntersectPlane(faces[2 * i + 1], ray, tmin, tmax,
+                                         t_pos, hitPos_pos, hitNormal_pos);
+        
+        float t_near;
+        float t_far;
 
-    // vec3 near_hitPos;
-    // vec3 near_hitNormal;
-    // 
-    // float t_x_neg;
-    // vec3  hitPos_x_neg;
-    // vec3  hitNormal_x_neg;
-    // bool  hashit_x_neg = IntersectPlane(plane_x_neg, ray, tmin, tmax, 
-                                    //  t_x_neg, hitPos_x_neg, hitNormal_x_neg);
-    // float t_x_pos;
-    // vec3  hitPos_x_pos;
-    // vec3  hitNormal_x_pos;
-    // bool  hashit_x_pos = IntersectPlane(plane_x_pos, ray, tmin, tmax, 
-                                    //  t_x_pos, hitPos_x_pos, hitNormal_x_pos);
-    // 
-    // if (hashit_x_neg && hashit_x_pos) {
-        // float t_x_near = t_x_neg < t_x_pos ? t_x_neg : t_x_pos;
-        // float t_x_far = t_x_neg > t_x_pos ? t_x_neg : t_x_pos;
-        // if (t_x_near > largest_near) {
-            // largest_near = t_x_near;
-            // near_hitPos = t_x_neg < t_x_pos ? hitPos_x_neg : hitPos_x_pos;
-            // near_hitNormal = t_x_neg < t_x_pos ? hitNormal_x_neg : hitNormal_x_pos;
-        // }
-            // 
-        // if (t_x_far < smallest_far)
-            // smallest_far = t_x_far;
-    // }
-    // float t_y_neg;
-    // vec3  hitPos_y_neg;
-    // vec3  hitNormal_y_neg;
-    // bool  hashit_y_neg = IntersectPlane(plane_y_neg, ray, tmin, tmax, 
-                                    //  t_y_neg, hitPos_y_neg, hitNormal_y_neg);
-    // float t_y_pos;
-    // vec3  hitPos_y_pos;
-    // vec3  hitNormal_y_pos;
-    // bool  hashit_y_pos = IntersectPlane(plane_y_pos, ray, tmin, tmax, 
-                                    //  t_y_pos, hitPos_y_pos, hitNormal_y_pos);
-    // if (hashit_y_neg && hashit_y_pos) {
-        // float t_y_near = t_y_neg < t_y_pos ? t_y_neg : t_y_pos;
-        // float t_y_far = t_y_neg > t_y_pos ? t_y_neg : t_y_pos;
-        // if (t_y_near > largest_near) {
-            // largest_near = t_y_near;
-            // near_hitPos = t_y_neg < t_y_pos ? hitPos_y_neg : hitPos_y_pos;
-            // near_hitNormal = t_y_neg < t_y_pos ? hitNormal_y_neg : hitNormal_y_pos;
-        // }           
-        // if (t_y_far < smallest_far)
-            // smallest_far = t_y_far;
-    // }
-    // float t_z_neg;
-    // vec3  hitPos_z_neg;
-    // vec3  hitNormal_z_neg;
-    // bool  hashit_z_neg = IntersectPlane(plane_z_neg, ray, tmin, tmax, 
-                                    //  t_z_neg, hitPos_z_neg, hitNormal_z_neg);
-    // float t_z_pos;
-    // vec3  hitPos_z_pos;
-    // vec3  hitNormal_z_pos;
-    // bool  hashit_z_pos = IntersectPlane(plane_z_pos, ray, tmin, tmax, 
-                                    //  t_z_pos, hitPos_z_pos, hitNormal_z_pos);
-    // if (hashit_z_neg && hashit_z_pos) {
-        // float t_z_near = t_z_neg < t_z_pos ? t_z_neg : t_z_pos;
-        // float t_z_far = t_z_neg > t_z_pos ? t_z_neg : t_z_pos;
-        // if (t_z_near > largest_near) {
-            // largest_near = t_z_near;
-            // near_hitPos = t_z_neg < t_z_pos ? hitPos_z_neg : hitPos_z_pos;
-            // near_hitNormal = t_z_neg < t_z_pos ? hitNormal_z_neg : hitNormal_z_pos;
-        // }         
-        // if (t_z_far < smallest_far)
-            // smallest_far = t_z_far;
-    // }
-// 
-    // if (largest_near >= smallest_far) return false;
-    // t = largest_near;
-    // hitPos = near_hitPos;
-    // hitNormal = near_hitNormal;
+        if (!hashit_neg && !hashit_pos) {
+            float res1 = dot(ray.o, vec3(faces[2 * i].A, faces[2 * i].B, faces[2 * i].C)) + faces[2 * i].D;
+            float res2 = dot(ray.o, vec3(faces[2 * i + 1].A, faces[2 * i + 1].B, faces[2 * i + 1].C)) + faces[2 * i + 1].D;
+            if (res1 < -tmin && res2 < -tmin)
+                continue;
+            else 
+                return false;
+        }
+        else if (hashit_neg && !hashit_pos) {
+            t_far = t_neg;
+            if (smallest_far > t_far)
+                smallest_far = t_far;
+        }
+        else if (!hashit_neg && hashit_pos) {
+            t_far = t_pos;
+            if (smallest_far > t_far)
+                smallest_far = t_far;
+        }
+        else if (hashit_neg && hashit_pos) {
+            t_near = t_neg < t_pos ? t_neg : t_pos;
+            t_far = t_neg > t_pos ? t_neg : t_pos;
+            if (largest_near < t_near) {
+                largest_near = t_near;
+                near_hitPos = t_neg < t_pos ? hitPos_neg : hitPos_pos;
+                near_hitNormal = t_neg < t_pos ? hitNormal_neg : hitNormal_pos;
+            }
+            if (smallest_far > t_far) {
+                smallest_far = t_far;
+            }
+        }
+    }    
+    if (largest_near >= smallest_far) return false;
+    t = largest_near;
+    hitPos = near_hitPos;
+    hitNormal = near_hitNormal;
     // if (!hashit_y_neg) return false;
     // t = t_y_neg;    
     // hitPos = hitPos_y_neg;
@@ -443,81 +500,73 @@ bool IntersectBox(in Box_t box, in Ray_t ray, in float tmin, in float tmax,
 
 bool IntersectBox(in Box_t box, in Ray_t ray, in float tmin, in float tmax)
 {
-    Plane_t plane_x_neg = Plane_t(-1.0, 0.0, 0.0, -box.corner1.x, box.materialID);
-    Plane_t plane_x_pos = Plane_t(1.0, 0.0, 0.0, box.corner2.x, box.materialID);
-    Plane_t plane_y_neg = Plane_t(0.0, -1.0, 0.0, -box.corner1.y, box.materialID);
-    Plane_t plane_y_pos = Plane_t(0.0, 1.0, 0.0, box.corner2.y, box.materialID);
-    Plane_t plane_z_neg = Plane_t(0.0, 0.0, -1.0, -box.corner1.z, box.materialID);
-    Plane_t plane_z_pos = Plane_t(0.0, 0.0, 1.0, box.corner2.z, box.materialID);
+    Plane_t faces[6];
+    vec3 faces_normal[6];
+    faces_normal[0] = vec3(-cos(box.angle), 0.0, -sin(box.angle));
+    faces_normal[1] = vec3(cos(box.angle), 0.0, sin(box.angle));
+    faces_normal[2] = vec3(0.0, -1.0, 0.0);
+    faces_normal[3] = vec3(0.0, 1.0, 0.0);
+    faces_normal[4] = vec3(sin(box.angle), 0.0, -cos(box.angle));
+    faces_normal[5] = vec3(-sin(box.angle), 0.0, cos(box.angle));
 
+    for (int i = 0 ; i < 3 ; i++) {
+        faces[2 * i] = Plane_t(faces_normal[2 * i].x, faces_normal[2 * i].y, faces_normal[2 * i].z,
+                              -dot(faces_normal[2 * i], box.corner1), box.materialID);
+        faces[2 * i + 1] = Plane_t(faces_normal[2 * i + 1].x, faces_normal[2 * i + 1].y, faces_normal[2 * i + 1].z,
+                      -dot(faces_normal[2 * i + 1], box.corner2), box.materialID);
+    }
     float largest_near = tmin;
     float smallest_far = tmax;
-
-    float t_x_neg;
-    vec3  hisPos_x_neg;
-    vec3  hitNormal_x_neg;
-    bool  hashit_x_neg = IntersectPlane(plane_x_neg, ray, tmin, tmax, 
-                                     t_x_neg, hisPos_x_neg, hitNormal_x_neg);
-    
-    float t_x_pos;
-    vec3  hisPos_x_pos;
-    vec3  hitNormal_x_pos;
-    bool  hashit_x_pos = IntersectPlane(plane_x_pos, ray, tmin, tmax, 
-                                     t_x_pos, hisPos_x_pos, hitNormal_x_pos);
-    
-    if (hashit_x_neg && hashit_x_pos) {
-        float t_x_near = t_x_neg < t_x_pos ? t_x_neg : t_x_pos;
-        float t_x_far = t_x_neg > t_x_pos ? t_x_neg : t_x_pos;
-        if (t_x_near > largest_near)
-            largest_near = t_x_near;
-        if (t_x_far < smallest_far)
-            smallest_far = t_x_far;
-    }
-
-    float t_y_neg;
-    vec3  hisPos_y_neg;
-    vec3  hitNormal_y_neg;
-    bool  hashit_y_neg = IntersectPlane(plane_y_neg, ray, tmin, tmax, 
-                                     t_y_neg, hisPos_y_neg, hitNormal_y_neg);
-
-    float t_y_pos;
-    vec3  hisPos_y_pos;
-    vec3  hitNormal_y_pos;
-    bool  hashit_y_pos = IntersectPlane(plane_y_pos, ray, tmin, tmax, 
-                                     t_y_pos, hisPos_y_pos, hitNormal_y_pos);
-
-    if (hashit_y_neg && hashit_y_pos) {
-        float t_y_near = t_y_neg < t_y_pos ? t_y_neg : t_y_pos;
-        float t_y_far = t_y_neg > t_y_pos ? t_y_neg : t_y_pos;
-        if (t_y_near > largest_near)
-            largest_near = t_y_near;
-        if (t_y_far < smallest_far)
-            smallest_far = t_y_far;
-    }
-
-    float t_z_neg;
-    vec3  hisPos_z_neg;
-    vec3  hitNormal_z_neg;
-    bool  hashit_z_neg = IntersectPlane(plane_z_neg, ray, tmin, tmax, 
-                                     t_z_neg, hisPos_z_neg, hitNormal_z_neg);
-
-    float t_z_pos;
-    vec3  hisPos_z_pos;
-    vec3  hitNormal_z_pos;
-    bool  hashit_z_pos = IntersectPlane(plane_z_pos, ray, tmin, tmax, 
-                                     t_z_pos, hisPos_z_pos, hitNormal_z_pos);
-    
-    if (hashit_z_neg && hashit_z_pos) {
-        float t_z_near = t_z_neg < t_z_pos ? t_z_neg : t_z_pos;
-        float t_z_far = t_z_neg > t_z_pos ? t_z_neg : t_z_pos;
-        if (t_z_near > largest_near)
-            largest_near = t_z_near;
-        if (t_z_far < smallest_far)
-            smallest_far = t_z_far;
-    }
-
+    vec3 near_hitPos;
+    vec3 near_hitNormal;
+    for (int i = 0 ; i < 3 ; i++) {
+        float t_neg;
+        vec3 hitPos_neg;
+        vec3 hitNormal_neg;
+        bool hashit_neg = IntersectPlane(faces[2 * i], ray, tmin, tmax,
+                                         t_neg, hitPos_neg, hitNormal_neg);
+        
+        float t_pos;
+        vec3 hitPos_pos;
+        vec3 hitNormal_pos;
+        bool hashit_pos = IntersectPlane(faces[2 * i + 1], ray, tmin, tmax,
+                                         t_pos, hitPos_pos, hitNormal_pos);
+        
+        float t_near;
+        float t_far;
+        if (!hashit_neg && !hashit_pos) {
+            float res1 = dot(ray.o, vec3(faces[2 * i].A, faces[2 * i].B, faces[2 * i].C)) + faces[2 * i].D;
+            float res2 = dot(ray.o, vec3(faces[2 * i + 1].A, faces[2 * i + 1].B, faces[2 * i + 1].C)) + faces[2 * i + 1].D;
+            if (res1 < -tmin && res2 < -tmin)
+                continue;
+            else 
+                return false;
+        }
+        else if (hashit_neg && !hashit_pos) {
+            t_far = t_neg;
+            if (smallest_far > t_far)
+                smallest_far = t_far;
+        }
+        else if (!hashit_neg && hashit_pos) {
+            t_far = t_pos;
+            if (smallest_far > t_far)
+                smallest_far = t_far;
+        }
+        else {
+            t_near = t_neg < t_pos ? t_neg : t_pos;
+            t_far = t_neg > t_pos ? t_neg : t_pos;
+            if (largest_near < t_near) {
+                largest_near = t_near;
+                near_hitPos = t_neg < t_pos ? hitPos_neg : hitPos_pos;
+                near_hitNormal = t_neg < t_pos ? hitNormal_neg : hitNormal_pos;
+            }
+            if (smallest_far > t_far) {
+                smallest_far = t_far;
+            }
+        }
+    }    
     if (largest_near >= smallest_far) return false;
-    return true;
+    return true;   
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -604,17 +653,17 @@ vec3 CastRay( in Ray_t ray,
         }
     }
 
-    // for (int i = 0 ; i < NUM_BOXES ; i++) {
-    //     temp_hasHit = IntersectBox(Box[i], ray, DEFAULT_TMIN, DEFAULT_TMAX, 
-    //                          temp_t, temp_hitPos, temp_hitNormal);
-    //     if (temp_hasHit && temp_t < nearest_t) {
-    //         hasHitSomething = true;
-    //         nearest_t = temp_t;
-    //         nearest_hitPos = temp_hitPos;
-    //         nearest_hitNormal = temp_hitNormal;
-    //         nearest_hitMatID = Box[i].materialID;
-    //     }
-    // }
+    for (int i = 0 ; i < NUM_BOXES ; i++) {
+        temp_hasHit = IntersectBox(Box[i], ray, DEFAULT_TMIN, DEFAULT_TMAX, 
+                             temp_t, temp_hitPos, temp_hitNormal);
+        if (temp_hasHit && temp_t < nearest_t) {
+            hasHitSomething = true;
+            nearest_t = temp_t;
+            nearest_hitPos = temp_hitPos;
+            nearest_hitNormal = temp_hitNormal;
+            nearest_hitMatID = Box[i].materialID;
+        }
+    }
 
     /////////////////////////////////
     // TASK: WRITE YOUR CODE HERE. //
@@ -664,15 +713,15 @@ vec3 CastRay( in Ray_t ray,
              }
         }
 
-        // if (!inShadow) {
-        //      for (int m = 0 ; m < NUM_BOXES ; m++) {
-        //          temp_inShadow = IntersectBox(Box[m], shadow_ray, DEFAULT_TMIN, tmax_to_light);
-        //          if (temp_inShadow) {
-        //              inShadow = temp_inShadow;
-        //              break;
-        //          }
-        //      }
-        // }
+        if (!inShadow) {
+             for (int m = 0 ; m < NUM_BOXES ; m++) {
+                 temp_inShadow = IntersectBox(Box[m], shadow_ray, DEFAULT_TMIN, tmax_to_light);
+                 if (temp_inShadow) {
+                     inShadow = temp_inShadow;
+                     break;
+                 }
+             }
+        }
         // debug with default no shadow
         I_local += PhongLighting(shadow_ray.d, nearest_hitNormal, -ray.d, inShadow, 
                                  Material[nearest_hitMatID], Light[i2]);
@@ -706,11 +755,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     // Scale pixel 2D position such that its y coordinate is in [-1.0, 1.0].
     vec2 pixel_pos = (2.0 * fragCoord.xy - iResolution.xy) / iResolution.y;
-
-    // Position the camera.
-    vec3 cam_pos = vec3( 0.0, 5.0, 18.0 );
-    vec3 cam_lookat = vec3( 0.0, 0.0, 0.0 );
-    vec3 cam_up_vec = vec3( 0.0, 1.0, 0.0 );
 
     // Set up camera coordinate frame in world space.
     vec3 cam_z_axis = normalize( cam_pos - cam_lookat );
