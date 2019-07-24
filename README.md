@@ -1,10 +1,32 @@
-# Assign5: Ray Tracing
+# Galaxy of Trigonometry
 
-## Group 1
+> A WebGL ray-tracing artifact, finished during 2019 NUS SWS.
+>
+> Galaxy is a mix of chaos and harmony: unpredictable things happen at each moment while a few graceful math rules are revealed. By combining trigonometry and straight-line motions in a well-designed way, this project offers a glimpse of the beauty of Galaxy.
 
-> How do people come up with such ingenious arguments? It's the same way people come up with Madame Bovary or Mona Lisa. I have no idea how it happens. I only know that when it happens to me, I feel very fortunate.
+## Media links of results
 
-## Interesting Shaders
+[![video](https://img.shields.io/badge/Video-Youtube-red.svg)](https://www.youtube.com/watch?v=gSMUVHWRbLo&t=1s)
+
+[![render](https://img.shields.io/badge/Render-Shadertoy-blue.svg)](https://www.shadertoy.com/view/WlXSzs)
+
+## Screen capture
+
+### scene 1
+
+![scene 1](./image1.jpg)
+
+### scene 2
+
+![scene 2](./image2.jpg)
+
+### scene 3
+
+![scene 3](./image3.jpg)
+
+## Other Interesting Shaders
+
+### \* : Reference of this project
 
 | index | name   | url                                   |
 | ----- | ------ | ------------------------------------- |
@@ -16,6 +38,7 @@
 | 5     | Fantastic background | https://www.shadertoy.com/view/XtjGR3 |
 | 6     | Interesting ball | https://www.shadertoy.com/view/XsB3W3 |
 | 7     | Crazy Universe | https://www.shadertoy.com/view/XlccRB |
+| 8* | Universe within | https://www.shadertoy.com/view/lscczl |
 
 ## Script
 
@@ -31,14 +54,3 @@
 | 7     | 40     | 16          | 转动镜头                 |
 | 8     | 56     | 8           | 树落下                   |
 
-## Project Title
-
-"Galaxy of Trigonometry"
-
-## For poster
-
-Galaxy is a mix of chaos and harmony: unpredictable things happen at each moment while a few graceful math rules are revealed. By combining trigonometry and straight-line motions in a well-designed way, this project offers a glimpse of the beauty of Galaxy.
-
-## Project Introduction
-
-This project combines trigonometry and straight-line motions together to produce agreeable structures and uses ray-tracing technique to animate them. It shows how an object performs motions both in straight-line and circle at the same time. It depicts the shape of new moon with a few spheres. Moreover, a galaxy floor lights up the whole scene.
