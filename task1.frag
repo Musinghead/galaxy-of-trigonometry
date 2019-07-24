@@ -226,11 +226,14 @@ bool IntersectSphere( in Sphere_t sph, in Ray_t ray, in float tmin, in float tma
     /////////////////////////////////
     // TASK: WRITE YOUR CODE HERE. //
     /////////////////////////////////
+    // get relative position of ray to the center of sphere
     Ray_t local_ray = Ray_t(ray.o - sph.center, ray.d);
+    // solve quadratic equation
     float a = 1.0;
     float b = 2.0 * dot(local_ray.d, local_ray.o);
     float c = dot(local_ray.o, local_ray.o) - sph.radius * sph.radius;
     float d = b * b - 4.0 * a * c;
+    // d <= 0 means no solution
     if ( d <= 0.0 )
         return false;
     
@@ -238,6 +241,7 @@ bool IntersectSphere( in Sphere_t sph, in Ray_t ray, in float tmin, in float tma
     float t_plus =  ( -b + sqrt(d) ) / (2.0 * a);
     float t_positive = 0.0;
     
+    // get the smallest positive t value
     if ( t_minus > 0.0 )
         t_positive = t_minus;
     else if ( t_plus > 0.0 )
@@ -245,8 +249,9 @@ bool IntersectSphere( in Sphere_t sph, in Ray_t ray, in float tmin, in float tma
     else
         return false;
     
+    // if t value is out of range, there is no intersection
     if ( t_positive < tmin || t_positive > tmax ) return false;
-
+    // return t value, hit position and normal vector
     t = t_positive;
     hitPos = ray.o + t_positive * ray.d;
     hitNormal = normalize(hitPos - sph.center);
@@ -266,12 +271,14 @@ bool IntersectSphere( in Sphere_t sph, in Ray_t ray, in float tmin, in float tma
     /////////////////////////////////
     // TASK: WRITE YOUR CODE HERE. //
     /////////////////////////////////
+    // get relative position of ray to the center of sphere
     Ray_t local_ray = Ray_t(ray.o - sph.center, ray.d);
+    // solve quadratic equation
     float a = 1.0;
     float b = 2.0 * dot(local_ray.d, local_ray.o);
     float c = dot(local_ray.o, local_ray.o) - sph.radius * sph.radius;
     float d = b * b - 4.0 * a * c;
-    
+    // d <= 0.0 means no solution
     if ( d <= 0.0 )
         return false;
         
@@ -280,13 +287,14 @@ bool IntersectSphere( in Sphere_t sph, in Ray_t ray, in float tmin, in float tma
 
     float t_positive = 0.0;
 
+    // find the smallest positive t value
     if ( t_minus > 0.0 )
         t_positive = t_minus;
     else if ( t_plus > 0.0 )
         t_positive = t_plus;
     else
         return false;
-    
+    // if t value is out of range, there is no intersection
     if ( t_positive < tmin || t_positive > tmax ) return false;
 
     return true;  // Replace this with your code.
@@ -354,9 +362,11 @@ vec3 CastRay( in Ray_t ray,
     //   nearest_t, nearest_hitPos, nearest_hitNormal, nearest_hitMatID.
     /////////////////////////////////////////////////////////////////////////////
 
+    // check if the ray intersects with each plane
     for (int i0 = 0 ; i0 < NUM_PLANES ; i0++) {
         temp_hasHit = IntersectPlane(Plane[i0], ray, DEFAULT_TMIN, DEFAULT_TMAX, 
                                      temp_t, temp_hitPos, temp_hitNormal);
+        // if hit and a smaller t value is got, update information about nearest hit point
         if (temp_hasHit && temp_t < nearest_t) {
             hasHitSomething = true;
             nearest_t = temp_t;
@@ -366,9 +376,11 @@ vec3 CastRay( in Ray_t ray,
         }
     }
 
+    // check if the ray intersects with each sphere
     for (int i1 = 0 ; i1 < NUM_SPHERES ; i1++) {
         temp_hasHit = IntersectSphere(Sphere[i1], ray, DEFAULT_TMIN, DEFAULT_TMAX, 
                              temp_t, temp_hitPos, temp_hitNormal);
+        // if hit and a smaller t value is got, update information about nearest hit point
         if (temp_hasHit && temp_t < nearest_t) {
             hasHitSomething = true;
             nearest_t = temp_t;
@@ -401,31 +413,36 @@ vec3 CastRay( in Ray_t ray,
     /////////////////////////////////////////////////////////////////////////////
 
     for (int i2 = 0 ; i2 < NUM_LIGHTS ; i2++) {
+        // shadow ray originates at the hit point, and points to the light source
         vec3 shadow_ray_d = normalize( Light[i2].position - nearest_hitPos );
+        // push origin point of the ray to step forward a little, towards the direction of the ray
         Ray_t shadow_ray = Ray_t(nearest_hitPos + shadow_ray_d * DEFAULT_TMIN, shadow_ray_d);
         bool inShadow = false;
         bool temp_inShadow = false;
-
+        // the shadow ray should not reach any point beyond the light source
         float tmax_to_light = dot(shadow_ray_d, (Light[i2].position - nearest_hitPos));
-
+        // check if shadow ray intersects with each plane
         for (int j = 0 ; j < NUM_PLANES ; j++) {
             temp_inShadow = IntersectPlane(Plane[j], shadow_ray, DEFAULT_TMIN, tmax_to_light);
+            // once the shadow ray hits a plane, the hit point cannot be lit up by the light source
             if (temp_inShadow) {
                 inShadow = temp_inShadow;
                 break;
             }
         }
-
+        // if the shadow ray has not been blocked
+        // check if it intersects with each sphere
         if (!inShadow) {
-             for (int k = 0 ; k < NUM_SPHERES ; k++) {
-                 temp_inShadow = IntersectSphere(Sphere[k], shadow_ray, DEFAULT_TMIN, tmax_to_light);
-                 if (temp_inShadow) {
-                     inShadow = temp_inShadow;
-                     break;
-                 }
-             }
+            for (int k = 0 ; k < NUM_SPHERES ; k++) {
+                temp_inShadow = IntersectSphere(Sphere[k], shadow_ray, DEFAULT_TMIN, tmax_to_light);
+                // once the shadow ray hits a sphere, it is blocked
+                if (temp_inShadow) {
+                    inShadow = temp_inShadow;
+                    break;
+                }
+            }
          }
-        // debug with default no shadow
+        // get phong lighting value and accumulate it to local light
         I_local += PhongLighting(shadow_ray.d, nearest_hitNormal, -ray.d, inShadow, 
                                  Material[nearest_hitMatID], Light[i2]);
             
