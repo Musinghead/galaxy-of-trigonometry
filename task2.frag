@@ -685,7 +685,7 @@ void InitScene()
     Material[10].n = 128.0;
 
     // Light 0.
-    Light[0].position = vec3( 12.0, 18.0, 15.0 );
+    Light[0].position = vec3( 16.0 + 4.0 * sin(time_rate * 16.0 * PI), 18.0, 15.0);
     Light[0].I_a = vec3( 0.1, 0.1, 0.1 );
     Light[0].I_source = vec3( 1.0, 1.0, 1.0 );
 
